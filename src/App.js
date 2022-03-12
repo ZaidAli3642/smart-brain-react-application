@@ -14,6 +14,7 @@ import "./App.css";
 function App() {
   const [input, setInput] = useState("");
   const [imageUrl, setImageUrl] = useState("");
+  const [imageError, setImageError] = useState(false);
   const [box, setBox] = useState({});
   const [route, setRoute] = useState("signin");
   const [isSignedIn, setIsSignedIn] = useState(false);
@@ -48,13 +49,9 @@ function App() {
     gettingUserToken();
   }, []);
 
-  const calculateFaceLocation = (data) => {
+  const calculateFaceLocation = (data, width, height) => {
     const clarifaiFace =
       data.outputs[0].data.regions[0].region_info.bounding_box;
-
-    const image = document.getElementById("inputImage");
-    const width = image.width;
-    const height = image.height;
 
     return {
       leftCol: clarifaiFace.left_col * width,
@@ -73,6 +70,7 @@ function App() {
   };
 
   const onButtonSubmit = () => {
+    setImageError(false);
     setImageUrl(input);
 
     const raw = JSON.stringify({
@@ -106,22 +104,30 @@ function App() {
     )
       .then((response) => response.json())
       .then((result) => {
-        fetch("https://nameless-mesa-43874.herokuapp.com/image", {
-          method: "PUT",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
-            id: user.id,
-          }),
-        })
-          .then((response) => response.json())
-          .then((count) => {
-            setUser({
-              ...user,
-              entries: count,
-            });
+        const image = document.getElementById("inputImage");
+        const width = image.width;
+        const height = image.height;
+
+        if (width && height) {
+          fetch("https://nameless-mesa-43874.herokuapp.com/image", {
+            method: "PUT",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+              id: user.id,
+            }),
           })
-          .catch((err) => console.log(err));
-        displayBox(calculateFaceLocation(result));
+            .then((response) => response.json())
+            .then((count) => {
+              setUser({
+                ...user,
+                entries: count,
+              });
+            })
+            .catch((err) => console.log(err));
+          displayBox(calculateFaceLocation(result, width, height));
+        } else {
+          setImageError(true);
+        }
       })
       .catch((error) => console.log("error", error));
   };
@@ -161,7 +167,11 @@ function App() {
             onInputChange={onInputChange}
             onButtonSubmit={onButtonSubmit}
           />
-          <FaceRecognition box={box} imageUrl={imageUrl} />
+          <FaceRecognition
+            imageError={imageError}
+            box={box}
+            imageUrl={imageUrl}
+          />
         </>
       ) : (
         <>

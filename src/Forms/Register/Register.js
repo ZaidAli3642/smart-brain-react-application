@@ -1,6 +1,5 @@
 import React, { useState } from "react";
 import jwtDecode from "jwt-decode";
-import axios from "axios";
 import "../forms.css";
 
 const Register = ({ onRouteChange, loadUser }) => {
